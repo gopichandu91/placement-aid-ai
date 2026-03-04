@@ -69,9 +69,12 @@ export interface ResumeAnalysisResult {
 const JOB_ROLE_SKILLS: Record<string, string[]> = {
   "Software Developer": ["javascript", "typescript", "react", "node", "python", "java", "git", "sql", "html", "css", "api", "rest", "agile", "testing", "docker", "aws", "algorithms", "data structures", "oop", "ci/cd"],
   "Data Scientist": ["python", "machine learning", "deep learning", "tensorflow", "pytorch", "pandas", "numpy", "sql", "statistics", "r", "tableau", "data visualization", "nlp", "scikit-learn", "jupyter", "big data", "spark", "hadoop", "regression", "classification"],
+  "Machine Learning Engineer": ["python", "tensorflow", "pytorch", "machine learning", "deep learning", "mlops", "docker", "kubernetes", "aws", "model deployment", "feature engineering", "ci/cd", "sql", "numpy", "pandas", "scikit-learn", "cloud", "api", "git", "monitoring"],
   "Web Developer": ["html", "css", "javascript", "react", "angular", "vue", "node", "typescript", "responsive", "bootstrap", "tailwind", "git", "api", "rest", "graphql", "webpack", "sass", "figma", "ui/ux", "accessibility"],
   "DevOps Engineer": ["docker", "kubernetes", "aws", "azure", "gcp", "terraform", "ansible", "jenkins", "ci/cd", "linux", "bash", "python", "monitoring", "prometheus", "grafana", "git", "networking", "security", "nginx", "microservices"],
-  "Mobile Developer": ["react native", "flutter", "swift", "kotlin", "android", "ios", "javascript", "typescript", "firebase", "api", "ui/ux", "git", "testing", "sqlite", "redux", "state management", "app store", "google play", "responsive", "animations"],
+  "QA Engineer": ["selenium", "cypress", "testing", "automation", "manual testing", "api testing", "postman", "jira", "performance testing", "ci/cd", "git", "agile", "javascript", "python", "sql", "regression", "bug tracking", "test cases", "quality assurance", "playwright"],
+  "UI/UX Designer": ["figma", "sketch", "adobe xd", "user research", "wireframing", "prototyping", "design systems", "accessibility", "responsive", "interaction design", "typography", "color theory", "usability testing", "html", "css", "ui/ux", "information architecture", "user flows", "personas", "visual design"],
+  "Product Manager": ["product strategy", "agile", "scrum", "user stories", "roadmap", "analytics", "sql", "stakeholder management", "a/b testing", "jira", "data-driven", "market research", "competitive analysis", "prioritization", "okr", "kpi", "communication", "leadership", "presentation", "documentation"],
 };
 
 export function analyzeResume(text: string, jobRole: string): ResumeAnalysisResult {

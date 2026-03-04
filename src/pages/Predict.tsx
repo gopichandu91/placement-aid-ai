@@ -11,11 +11,16 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { predictPlacement, PredictionInput, PredictionResult } from "@/lib/prediction";
 import { Target, TrendingUp, AlertTriangle, CheckCircle, Lightbulb } from "lucide-react";
+import MultiRoleSelect from "@/components/MultiRoleSelect";
+import SkillSuggestions from "@/components/SkillSuggestions";
+import LearningResources from "@/components/LearningResources";
+import { RoleName } from "@/lib/roles-data";
 
 const Predict = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -31,6 +36,10 @@ const Predict = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (selectedRoles.length === 0) {
+      toast.error("Please select at least one target role");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -47,7 +56,6 @@ const Predict = () => {
       const prediction = predictPlacement(input);
       setResult(prediction);
 
-      // Save to DB
       const { error } = await supabase.from("prediction_history").insert({
         user_id: user.id,
         full_name: form.fullName,
@@ -78,7 +86,7 @@ const Predict = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Placement Predictor</h1>
           <p className="text-muted-foreground mt-1">Enter your academic profile to predict placement probability</p>
@@ -91,6 +99,12 @@ const Predict = () => {
               <div className="space-y-2">
                 <Label className="text-foreground">Full Name</Label>
                 <Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} placeholder="Enter your name" className="bg-secondary border-border" required />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-foreground">Target Roles</Label>
+                <MultiRoleSelect selected={selectedRoles} onChange={setSelectedRoles} placeholder="Select target roles..." />
+                {selectedRoles.length === 0 && <p className="text-xs text-muted-foreground">Select one or more roles you're targeting</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -172,6 +186,14 @@ const Predict = () => {
             </motion.div>
           )}
         </div>
+
+        {/* Skill Suggestions & Resources - shown after prediction or when roles selected */}
+        {selectedRoles.length > 0 && (
+          <div className="space-y-8">
+            <SkillSuggestions roles={selectedRoles} />
+            <LearningResources roles={selectedRoles} />
+          </div>
+        )}
       </div>
     </AppLayout>
   );
