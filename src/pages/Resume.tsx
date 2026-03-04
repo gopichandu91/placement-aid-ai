@@ -4,38 +4,38 @@ import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { analyzeResume, ResumeAnalysisResult } from "@/lib/prediction";
 import { FileText, Upload, CheckCircle, XCircle, Lightbulb } from "lucide-react";
-
-const JOB_ROLES = ["Software Developer", "Data Scientist", "Web Developer", "DevOps Engineer", "Mobile Developer"];
+import MultiRoleSelect from "@/components/MultiRoleSelect";
+import SkillSuggestions from "@/components/SkillSuggestions";
+import LearningResources from "@/components/LearningResources";
+import { RoleName } from "@/lib/roles-data";
 
 const Resume = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResumeAnalysisResult | null>(null);
-  const [jobRole, setJobRole] = useState("Software Developer");
+  const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const extractTextFromFile = async (file: File): Promise<string> => {
-    // For simplicity, read as text. For real PDFs you'd use pdfjs-dist.
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        resolve(text || "");
-      };
+      reader.onload = (e) => resolve((e.target?.result as string) || "");
       reader.readAsText(file);
     });
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    if (!user) return;
+    if (!file || !user) return;
+    if (selectedRoles.length === 0) {
+      toast.error("Please select at least one target role first");
+      return;
+    }
 
     setFileName(file.name);
     setLoading(true);
@@ -43,18 +43,18 @@ const Resume = () => {
     try {
       const text = await extractTextFromFile(file);
       if (!text || text.length < 10) {
-        toast.error("Could not extract text from file. Try a .txt file or paste your resume content.");
+        toast.error("Could not extract text from file. Try a .txt file.");
         setLoading(false);
         return;
       }
 
-      const analysis = analyzeResume(text, jobRole);
+      // Analyze against the first selected role (primary)
+      const analysis = analyzeResume(text, selectedRoles[0]);
       setResult(analysis);
 
-      // Save to DB
       const { error } = await supabase.from("resume_analysis").insert({
         user_id: user.id,
-        job_role: jobRole,
+        job_role: selectedRoles.join(", "),
         ats_score: analysis.atsScore,
         matched_skills: analysis.matchedSkills,
         missing_skills: analysis.missingSkills,
@@ -74,7 +74,7 @@ const Resume = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Resume Analyzer</h1>
           <p className="text-muted-foreground mt-1">Get an ATS compatibility score for your resume</p>
@@ -84,17 +84,9 @@ const Resume = () => {
           {/* Upload */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-xl p-6 space-y-6">
             <div className="space-y-2">
-              <Label className="text-foreground">Target Job Role</Label>
-              <Select value={jobRole} onValueChange={setJobRole}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {JOB_ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>{role}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-foreground">Target Roles</Label>
+              <MultiRoleSelect selected={selectedRoles} onChange={setSelectedRoles} placeholder="Select target roles..." />
+              {selectedRoles.length === 0 && <p className="text-xs text-muted-foreground">Select roles to analyze your resume against</p>}
             </div>
 
             <div
@@ -166,6 +158,14 @@ const Resume = () => {
             </motion.div>
           )}
         </div>
+
+        {/* Skills & Resources based on selected roles */}
+        {selectedRoles.length > 0 && (
+          <div className="space-y-8">
+            <SkillSuggestions roles={selectedRoles} />
+            <LearningResources roles={selectedRoles} />
+          </div>
+        )}
       </div>
     </AppLayout>
   );
