@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +13,11 @@ type AuthMode = "signin" | "signup";
 const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("signin");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
-  // Form state
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,15 +33,20 @@ const Auth = () => {
     if (/[0-9]/.test(pw)) score++;
     if (/[^A-Za-z0-9]/.test(pw)) score++;
     if (score <= 1) return { label: "Weak", color: "bg-destructive", width: "25%" };
-    if (score === 2) return { label: "Fair", color: "bg-warning", width: "50%" };
+    if (score === 2) return { label: "Fair", color: "bg-yellow-500", width: "50%" };
     if (score === 3) return { label: "Good", color: "bg-primary", width: "75%" };
-    return { label: "Strong", color: "bg-success", width: "100%" };
+    return { label: "Strong", color: "bg-green-500", width: "100%" };
   };
 
   const strength = getPasswordStrength(password);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!email.trim() || !password.trim()) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
     if (!validateEmail(email)) {
       toast.error("Please enter a valid email address.");
       return;
@@ -76,23 +78,18 @@ const Auth = () => {
         navigate("/dashboard");
       }
     } catch (error: any) {
-      toast.error(error.message || "Authentication failed. Please try again.");
+      const msg = error.message || "Authentication failed.";
+      if (msg.includes("Invalid login")) {
+        toast.error("Incorrect email or password.");
+      } else if (msg.includes("User already registered")) {
+        toast.error("An account with this email already exists.");
+      } else if (msg.includes("Email not confirmed")) {
+        toast.error("Please verify your email before signing in.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || "Google sign-in failed. Please try again.");
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -111,7 +108,7 @@ const Auth = () => {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-[100px] gradient-bg pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-accent/20 blur-[80px] pointer-events-none" />
 
-      {/* Left branding panel – hidden on mobile */}
+      {/* Left branding panel */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center p-12">
         <div className="absolute inset-0 gradient-bg opacity-[0.07]" />
         <motion.div
@@ -121,7 +118,7 @@ const Auth = () => {
           className="relative z-10 max-w-md"
         >
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center animate-pulse-glow">
+            <div className="w-12 h-12 rounded-xl gradient-bg flex items-center justify-center">
               <Brain className="w-7 h-7 text-primary-foreground" />
             </div>
             <span className="text-3xl font-display font-bold gradient-text">CareerPredict AI</span>
@@ -299,14 +296,6 @@ const Auth = () => {
                     </div>
                   )}
 
-                  {mode === "signin" && (
-                    <div className="flex justify-end">
-                      <button type="button" className="text-xs text-primary hover:underline">
-                        Forgot password?
-                      </button>
-                    </div>
-                  )}
-
                   <Button
                     type="submit"
                     disabled={loading}
@@ -322,36 +311,6 @@ const Auth = () => {
                     )}
                   </Button>
                 </form>
-
-                {/* Divider */}
-                <div className="flex items-center gap-3 my-6">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-xs text-muted-foreground">or continue with</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-
-                {/* Google */}
-                <Button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={googleLoading}
-                  variant="outline"
-                  className="w-full h-11 rounded-xl border-border bg-secondary/30 hover:bg-secondary/60 font-medium text-sm transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
-                >
-                  {googleLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                      </svg>
-                      Continue with Google
-                    </>
-                  )}
-                </Button>
               </motion.div>
             </AnimatePresence>
 
