@@ -4,14 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { analyzeResume, ResumeAnalysisResult } from "@/lib/prediction";
-import { FileText, Upload, CheckCircle, XCircle, Lightbulb } from "lucide-react";
+import { FileText, Upload, CheckCircle, XCircle, Lightbulb, BarChart3 } from "lucide-react";
 import MultiRoleSelect from "@/components/MultiRoleSelect";
 import SkillSuggestions from "@/components/SkillSuggestions";
 import LearningResources from "@/components/LearningResources";
 import { RoleName } from "@/lib/roles-data";
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const Resume = () => {
   const { user } = useAuth();
@@ -21,12 +27,38 @@ const Resume = () => {
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const extractTextFromFile = async (file: File): Promise<string> => {
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pages: string[] = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const text = content.items.map((item: any) => item.str).join(" ");
+      pages.push(text);
+    }
+    return pages.join("\n");
+  };
+
+  const extractTextFromDocx = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
+  const extractTextFromTxt = async (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve((e.target?.result as string) || "");
       reader.readAsText(file);
     });
+  };
+
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (ext === "pdf") return extractTextFromPdf(file);
+    if (ext === "docx" || ext === "doc") return extractTextFromDocx(file);
+    return extractTextFromTxt(file);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,13 +74,12 @@ const Resume = () => {
 
     try {
       const text = await extractTextFromFile(file);
-      if (!text || text.length < 10) {
-        toast.error("Could not extract text from file. Try a .txt file.");
+      if (!text || text.trim().length < 10) {
+        toast.error("Could not extract text from file. Try a different format (.txt, .pdf, .docx).");
         setLoading(false);
         return;
       }
 
-      // Analyze against the first selected role (primary)
       const analysis = analyzeResume(text, selectedRoles[0]);
       setResult(analysis);
 
@@ -64,7 +95,7 @@ const Resume = () => {
       if (error) throw error;
       toast.success("Analysis saved!");
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || "Failed to analyze resume");
     } finally {
       setLoading(false);
     }
@@ -96,7 +127,7 @@ const Resume = () => {
               <input ref={fileRef} type="file" accept=".txt,.pdf,.doc,.docx" className="hidden" onChange={handleUpload} />
               <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-foreground font-medium">{fileName || "Click to upload resume"}</p>
-              <p className="text-sm text-muted-foreground mt-1">Supports .txt files (best results)</p>
+              <p className="text-sm text-muted-foreground mt-1">Supports PDF, DOCX, and TXT files</p>
             </div>
 
             {loading && (
@@ -114,6 +145,28 @@ const Resume = () => {
                 <FileText className="w-10 h-10 text-primary mx-auto mb-3" />
                 <div className={`text-5xl font-display font-bold ${scoreColor} mb-1`}>{result.atsScore}%</div>
                 <div className="text-muted-foreground">ATS Compatibility Score</div>
+              </div>
+
+              {/* Score Breakdown */}
+              <div className="glass rounded-xl p-6 space-y-4">
+                <h3 className="text-base font-display font-semibold text-foreground flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                  Score Breakdown
+                </h3>
+                {[
+                  { label: "Skills Match (50%)", value: result.breakdown.skillScore },
+                  { label: "Projects (25%)", value: result.breakdown.projectScore },
+                  { label: "Tools & Tech (15%)", value: result.breakdown.toolsScore },
+                  { label: "Education (10%)", value: result.breakdown.educationScore },
+                ].map((item) => (
+                  <div key={item.label} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="text-foreground font-medium">{item.value}%</span>
+                    </div>
+                    <Progress value={item.value} className="h-2" />
+                  </div>
+                ))}
               </div>
 
               <div className="glass rounded-xl p-6">
@@ -159,7 +212,6 @@ const Resume = () => {
           )}
         </div>
 
-        {/* Skills & Resources based on selected roles */}
         {selectedRoles.length > 0 && (
           <div className="space-y-8">
             <SkillSuggestions roles={selectedRoles} />
