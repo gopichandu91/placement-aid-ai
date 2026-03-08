@@ -218,6 +218,7 @@ export default function SkillInput({ skills, onChange }: SkillInputProps) {
                       <SelectItem value="Beginner">Beginner</SelectItem>
                       <SelectItem value="Intermediate">Intermediate</SelectItem>
                       <SelectItem value="Advanced">Advanced</SelectItem>
+                      <SelectItem value="Expert">Expert</SelectItem>
                     </SelectContent>
                   </Select>
                   <button
