@@ -64,8 +64,8 @@ const Resume = () => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (selectedRoles.length === 0) {
-      toast.error("Please select at least one target role first");
+    if (!selectedRole) {
+      toast.error("Please select a target role first");
       return;
     }
 
