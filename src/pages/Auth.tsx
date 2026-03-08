@@ -198,6 +198,11 @@ const Auth = () => {
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {mode === "signin" && forgotMode ? (
+                    <ForgotPasswordForm
+                      onBack={() => setForgotMode(false)}
+                    />
+                  ) : (<>
                   {mode === "signup" && (
                     <div className="space-y-2">
                       <Label htmlFor="fullName" className="text-foreground text-sm">Full Name</Label>
