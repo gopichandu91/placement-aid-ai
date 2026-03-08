@@ -115,9 +115,18 @@ const Resume = () => {
           {/* Upload */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-xl p-6 space-y-6">
             <div className="space-y-2">
-              <Label className="text-foreground">Target Roles</Label>
-              <MultiRoleSelect selected={selectedRoles} onChange={setSelectedRoles} placeholder="Select target roles..." />
-              {selectedRoles.length === 0 && <p className="text-xs text-muted-foreground">Select roles to analyze your resume against</p>}
+              <Label className="text-foreground">Select Target Role</Label>
+              <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as RoleName)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Select a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!selectedRole && <p className="text-xs text-muted-foreground">Select one role to analyze your resume against</p>}
             </div>
 
             <div
