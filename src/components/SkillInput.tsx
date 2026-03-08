@@ -83,6 +83,7 @@ const levelColor: Record<SkillLevel, string> = {
   Beginner: "bg-warning/15 text-warning border-warning/25",
   Intermediate: "bg-primary/15 text-primary border-primary/25",
   Advanced: "bg-success/15 text-success border-success/25",
+  Expert: "bg-destructive/15 text-destructive border-destructive/25",
 };
 
 export default function SkillInput({ skills, onChange }: SkillInputProps) {
