@@ -1,6 +1,6 @@
 // Placement prediction algorithm (client-side scoring)
 
-export type SkillLevel = "Beginner" | "Intermediate" | "Advanced";
+export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert";
 
 export interface UserSkillInput {
   skill: string;
