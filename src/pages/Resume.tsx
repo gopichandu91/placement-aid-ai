@@ -156,6 +156,17 @@ const Resume = () => {
                 <div className="text-muted-foreground">ATS Compatibility Score</div>
               </div>
 
+              {/* Role Fit Explanation */}
+              {result.roleFitExplanation && (
+                <div className="glass rounded-xl p-6">
+                  <h3 className="text-base font-display font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    Role Fit Analysis
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{result.roleFitExplanation}</p>
+                </div>
+              )}
+
               {/* Score Breakdown */}
               <div className="glass rounded-xl p-6 space-y-4">
                 <h3 className="text-base font-display font-semibold text-foreground flex items-center gap-2">
@@ -163,9 +174,9 @@ const Resume = () => {
                   Score Breakdown
                 </h3>
                 {[
-                  { label: "Skills Match (50%)", value: result.breakdown.skillScore },
-                  { label: "Projects (25%)", value: result.breakdown.projectScore },
-                  { label: "Tools & Tech (15%)", value: result.breakdown.toolsScore },
+                  { label: "Core Skills (50%)", value: result.breakdown.skillScore },
+                  { label: "Tools & Tech (20%)", value: result.breakdown.toolsScore },
+                  { label: "Projects (20%)", value: result.breakdown.projectScore },
                   { label: "Education (10%)", value: result.breakdown.educationScore },
                 ].map((item) => (
                   <div key={item.label} className="space-y-1">
