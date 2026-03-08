@@ -23,7 +23,7 @@ const Resume = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResumeAnalysisResult | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
+  const [selectedRole, setSelectedRole] = useState<RoleName | "">("");
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
