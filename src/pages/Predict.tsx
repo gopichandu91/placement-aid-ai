@@ -9,18 +9,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { predictPlacement, PredictionInput, PredictionResult } from "@/lib/prediction";
-import { Target, TrendingUp, AlertTriangle, CheckCircle, Lightbulb } from "lucide-react";
+import { predictPlacement, PredictionInput, EnhancedPredictionResult } from "@/lib/prediction";
+import { Target } from "lucide-react";
 import MultiRoleSelect from "@/components/MultiRoleSelect";
+import SkillInput, { UserSkill } from "@/components/SkillInput";
 import SkillSuggestions from "@/components/SkillSuggestions";
 import LearningResources from "@/components/LearningResources";
+import PredictionResultCard from "@/components/PredictionResult";
 import { RoleName } from "@/lib/roles-data";
 
 const Predict = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<PredictionResult | null>(null);
+  const [result, setResult] = useState<EnhancedPredictionResult | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
+  const [userSkills, setUserSkills] = useState<UserSkill[]>([]);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -51,6 +54,8 @@ const Predict = () => {
         codingSkill: form.codingSkill,
         communicationRating: parseInt(form.communicationRating) || 5,
         backlogs: form.backlogs,
+        userSkills: userSkills.map((s) => ({ skill: s.skill, level: s.level })),
+        targetRoles: selectedRoles,
       };
 
       const prediction = predictPlacement(input);
@@ -80,16 +85,12 @@ const Predict = () => {
     }
   };
 
-  const classColor = result?.classification === "High" ? "text-success" : result?.classification === "Medium" ? "text-warning" : "text-destructive";
-  const classIcon = result?.classification === "High" ? CheckCircle : result?.classification === "Medium" ? TrendingUp : AlertTriangle;
-  const ClassIcon = classIcon;
-
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground">Placement Predictor</h1>
-          <p className="text-muted-foreground mt-1">Enter your academic profile to predict placement probability</p>
+          <p className="text-muted-foreground mt-1">Enter your academic profile and skills to predict placement probability</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
@@ -105,6 +106,15 @@ const Predict = () => {
                 <Label className="text-foreground">Target Roles</Label>
                 <MultiRoleSelect selected={selectedRoles} onChange={setSelectedRoles} placeholder="Select target roles..." />
                 {selectedRoles.length === 0 && <p className="text-xs text-muted-foreground">Select one or more roles you're targeting</p>}
+              </div>
+
+              {/* Skills Section */}
+              <div className="space-y-2 pt-2 border-t border-border/50">
+                <Label className="text-foreground flex items-center gap-2">
+                  Your Skills
+                  <span className="text-xs text-muted-foreground font-normal">(adds accuracy)</span>
+                </Label>
+                <SkillInput skills={userSkills} onChange={setUserSkills} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -161,33 +171,9 @@ const Predict = () => {
           </motion.div>
 
           {/* Result */}
-          {result && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-              <div className="glass rounded-xl p-6 text-center glow-border animate-pulse-glow">
-                <ClassIcon className={`w-12 h-12 ${classColor} mx-auto mb-3`} />
-                <div className="text-5xl font-display font-bold text-foreground mb-1">{result.probability.toFixed(1)}%</div>
-                <div className={`text-lg font-semibold ${classColor}`}>{result.classification} Probability</div>
-              </div>
-
-              <div className="glass rounded-xl p-6">
-                <h3 className="text-lg font-display font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-warning" />
-                  Improvement Suggestions
-                </h3>
-                <ul className="space-y-3">
-                  {result.suggestions.map((s, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-          )}
+          {result && <PredictionResultCard result={result} />}
         </div>
 
-        {/* Skill Suggestions & Resources - shown after prediction or when roles selected */}
         {selectedRoles.length > 0 && (
           <div className="space-y-8">
             <SkillSuggestions roles={selectedRoles} />
