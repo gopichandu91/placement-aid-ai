@@ -1,4 +1,12 @@
 // Placement prediction algorithm (client-side scoring)
+
+export type SkillLevel = "Beginner" | "Intermediate" | "Advanced";
+
+export interface UserSkillInput {
+  skill: string;
+  level: SkillLevel;
+}
+
 export interface PredictionInput {
   cgpa: number;
   internships: number;
@@ -7,6 +15,8 @@ export interface PredictionInput {
   codingSkill: "Beginner" | "Intermediate" | "Advanced";
   communicationRating: number;
   backlogs: boolean;
+  userSkills?: UserSkillInput[];
+  targetRoles?: string[];
 }
 
 export interface PredictionResult {
@@ -15,32 +25,189 @@ export interface PredictionResult {
   suggestions: string[];
 }
 
-export function predictPlacement(input: PredictionInput): PredictionResult {
-  let score = 0;
-  score += Math.min((input.cgpa / 10) * 30, 30);
-  score += Math.min(input.internships * 5, 15);
-  score += Math.min(input.projects * 3, 15);
-  score += Math.min(input.certifications * 2.5, 10);
-  const codingMap = { Beginner: 3, Intermediate: 9, Advanced: 15 };
-  score += codingMap[input.codingSkill];
-  score += input.communicationRating;
-  if (input.backlogs) score -= 15;
+export interface EnhancedPredictionResult extends PredictionResult {
+  reason: string;
+  skillStrengths: string[];
+  skillsToImprove: string[];
+  breakdown: {
+    skillMatchScore: number;
+    skillLevelScore: number;
+    educationScore: number;
+    experienceScore: number;
+    otherScore: number;
+  };
+}
 
-  const probability = Math.max(0, Math.min(100, score));
+const LEVEL_WEIGHT: Record<SkillLevel, number> = {
+  Beginner: 0.3,
+  Intermediate: 0.65,
+  Advanced: 1.0,
+};
+
+// Map user skill names to role skill keywords (lowercased fuzzy)
+function skillMatchesRoleKeyword(userSkill: string, roleKeyword: string): boolean {
+  const u = userSkill.toLowerCase();
+  const r = roleKeyword.toLowerCase();
+  if (u === r) return true;
+  if (u.includes(r) || r.includes(u)) return true;
+  // Check synonym mapping
+  const synonymEntries: [string, string[]][] = [
+    ["python", ["python3", "py"]],
+    ["javascript", ["js", "ecmascript"]],
+    ["typescript", ["ts"]],
+    ["machine learning", ["ml"]],
+    ["deep learning", ["dl", "neural networks"]],
+    ["react", ["reactjs", "react.js"]],
+    ["node.js", ["nodejs", "node"]],
+    ["c++", ["cpp"]],
+    ["c#", ["csharp"]],
+    ["postgresql", ["postgres"]],
+    ["mongodb", ["mongo"]],
+    ["tensorflow", ["tf"]],
+    ["pytorch", ["torch"]],
+    ["scikit-learn", ["sklearn"]],
+    ["amazon web services", ["aws"]],
+    ["google cloud platform", ["gcp"]],
+    ["kubernetes", ["k8s"]],
+    ["power bi", ["powerbi"]],
+    ["natural language processing", ["nlp"]],
+    ["rest apis", ["rest", "restful"]],
+    ["ci/cd", ["cicd", "continuous integration"]],
+  ];
+  for (const [canonical, synonyms] of synonymEntries) {
+    const allForms = [canonical, ...synonyms];
+    const uMatches = allForms.some((f) => f === u || u.includes(f) || f.includes(u));
+    const rMatches = allForms.some((f) => f === r || r.includes(f) || f.includes(r));
+    if (uMatches && rMatches) return true;
+  }
+  return false;
+}
+
+export function predictPlacement(input: PredictionInput): EnhancedPredictionResult {
+  const skills = input.userSkills || [];
+  const roles = input.targetRoles || [];
+
+  // --- 1. Skill Match Score (40% weight) ---
+  // Compare user skills against target role required skills from JOB_ROLE_SKILLS
+  let skillMatchRatio = 0;
+  let matchedSkillNames: string[] = [];
+  let missingSkillNames: string[] = [];
+
+  if (roles.length > 0 && skills.length > 0) {
+    const allRoleSkills = new Set<string>();
+    for (const role of roles) {
+      const roleSkills = JOB_ROLE_SKILLS[role] || [];
+      roleSkills.forEach((s) => allRoleSkills.add(s));
+    }
+    const roleSkillArray = Array.from(allRoleSkills);
+    const matched = roleSkillArray.filter((rs) =>
+      skills.some((us) => skillMatchesRoleKeyword(us.skill, rs))
+    );
+    const missing = roleSkillArray.filter((rs) =>
+      !skills.some((us) => skillMatchesRoleKeyword(us.skill, rs))
+    );
+    skillMatchRatio = roleSkillArray.length > 0 ? matched.length / roleSkillArray.length : 0;
+    matchedSkillNames = matched.map((s) => s.charAt(0).toUpperCase() + s.slice(1));
+    missingSkillNames = missing.slice(0, 8).map((s) => s.charAt(0).toUpperCase() + s.slice(1));
+  } else if (skills.length > 0) {
+    // No target roles — give partial credit based on skill count
+    skillMatchRatio = Math.min(skills.length / 10, 1);
+    matchedSkillNames = skills.map((s) => s.skill);
+  }
+  const skillMatchScore = skillMatchRatio * 100;
+
+  // --- 2. Skill Level Score (25% weight) ---
+  let skillLevelScore = 0;
+  if (skills.length > 0) {
+    const avgLevel = skills.reduce((sum, s) => sum + LEVEL_WEIGHT[s.level], 0) / skills.length;
+    skillLevelScore = avgLevel * 100;
+  }
+  const skillStrengths = skills
+    .filter((s) => s.level === "Advanced" || s.level === "Intermediate")
+    .map((s) => `${s.skill} (${s.level})`);
+
+  // --- 3. Education Score (15% weight) ---
+  const cgpaNorm = Math.min((input.cgpa / 10) * 100, 100);
+  const backlogPenalty = input.backlogs ? 30 : 0;
+  const educationScore = Math.max(0, cgpaNorm - backlogPenalty);
+
+  // --- 4. Experience Score (10% weight) ---
+  const internshipScore = Math.min(input.internships * 20, 100);
+  const projectScore = Math.min(input.projects * 15, 100);
+  const certScore = Math.min(input.certifications * 20, 100);
+  const experienceScore = (internshipScore * 0.4 + projectScore * 0.35 + certScore * 0.25);
+
+  // --- 5. Other Score (10% weight) ---
+  const codingMap = { Beginner: 25, Intermediate: 60, Advanced: 100 };
+  const commScore = (input.communicationRating / 10) * 100;
+  const otherScore = (codingMap[input.codingSkill] * 0.6 + commScore * 0.4);
+
+  // --- Weighted total ---
+  const rawProbability =
+    skillMatchScore * 0.40 +
+    skillLevelScore * 0.25 +
+    educationScore * 0.15 +
+    experienceScore * 0.10 +
+    otherScore * 0.10;
+
+  const probability = Math.max(0, Math.min(100, rawProbability));
   const classification: "High" | "Medium" | "Low" =
     probability >= 70 ? "High" : probability >= 40 ? "Medium" : "Low";
 
+  // --- Suggestions ---
   const suggestions: string[] = [];
-  if (input.cgpa < 7) suggestions.push("Focus on improving your CGPA above 7.0 for better chances");
-  if (input.internships < 2) suggestions.push("Aim for at least 2 internships to strengthen your profile");
-  if (input.projects < 3) suggestions.push("Build more projects to showcase practical skills");
-  if (input.certifications < 2) suggestions.push("Get certified in in-demand technologies");
-  if (input.codingSkill === "Beginner") suggestions.push("Practice coding daily on LeetCode or HackerRank");
-  if (input.communicationRating < 7) suggestions.push("Improve communication through mock interviews");
-  if (input.backlogs) suggestions.push("Clear all backlogs ASAP — this is a major red flag");
+  if (input.cgpa < 7) suggestions.push("Focus on improving your CGPA above 7.0 for better chances.");
+  if (input.internships < 2) suggestions.push("Aim for at least 2 internships to strengthen your profile.");
+  if (input.projects < 3) suggestions.push("Build more projects to showcase practical skills.");
+  if (input.certifications < 2) suggestions.push("Get certified in in-demand technologies.");
+  if (input.codingSkill === "Beginner") suggestions.push("Practice coding daily on LeetCode or HackerRank.");
+  if (input.communicationRating < 7) suggestions.push("Improve communication through mock interviews.");
+  if (input.backlogs) suggestions.push("Clear all backlogs ASAP — this is a major red flag.");
+  if (missingSkillNames.length > 0) {
+    suggestions.push(`Learn these key skills: ${missingSkillNames.slice(0, 5).join(", ")}.`);
+  }
+  if (skills.filter((s) => s.level === "Beginner").length > 2) {
+    suggestions.push("Level up your beginner skills to intermediate — this significantly boosts your profile.");
+  }
+  if (skills.length === 0) {
+    suggestions.push("Add your skills to get a more accurate and personalized prediction.");
+  }
   if (suggestions.length === 0) suggestions.push("Your profile looks strong! Keep up the great work.");
 
-  return { probability, classification, suggestions };
+  // --- Human-like reason ---
+  let reason = "";
+  if (roles.length > 0) {
+    const topRole = roles[0];
+    if (probability >= 70) {
+      reason = `Your skills align strongly with the ${topRole} role. ${matchedSkillNames.length > 0 ? `Your proficiency in ${matchedSkillNames.slice(0, 3).join(", ")} gives you a competitive edge.` : ""}`;
+    } else if (probability >= 40) {
+      reason = `You have a decent foundation for ${topRole}, but there's room to grow. ${missingSkillNames.length > 0 ? `Consider building expertise in ${missingSkillNames.slice(0, 3).join(", ")}.` : ""}`;
+    } else {
+      reason = `Your current profile has limited overlap with ${topRole} requirements. ${missingSkillNames.length > 0 ? `Focus on learning ${missingSkillNames.slice(0, 3).join(", ")} to improve your chances.` : ""}`;
+    }
+  } else {
+    reason = probability >= 70
+      ? "Your academic profile and experience suggest strong placement potential."
+      : probability >= 40
+        ? "You have a moderate profile. Gaining more skills and experience will help."
+        : "Consider building more skills, projects, and internship experience.";
+  }
+
+  return {
+    probability,
+    classification,
+    suggestions,
+    reason,
+    skillStrengths,
+    skillsToImprove: missingSkillNames,
+    breakdown: {
+      skillMatchScore,
+      skillLevelScore,
+      educationScore,
+      experienceScore,
+      otherScore,
+    },
+  };
 }
 
 // Resume analysis
