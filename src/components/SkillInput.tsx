@@ -99,6 +99,16 @@ export default function SkillInput({ skills, onChange }: SkillInputProps) {
     [search, selectedNames]
   );
 
+  const filteredCategories = useMemo(
+    () => SKILL_CATEGORIES.map((cat) => ({
+      ...cat,
+      skills: cat.skills.filter(
+        (s) => s.toLowerCase().includes(search.toLowerCase()) && !selectedNames.has(s)
+      ),
+    })).filter((cat) => cat.skills.length > 0),
+    [search, selectedNames]
+  );
+
   const addSkill = (skill: string) => {
     if (!selectedNames.has(skill)) {
       onChange([...skills, { skill, level: "Intermediate" }]);
