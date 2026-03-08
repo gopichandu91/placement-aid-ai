@@ -5,14 +5,14 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { analyzeResume, ResumeAnalysisResult } from "@/lib/prediction";
 import { FileText, Upload, CheckCircle, XCircle, Lightbulb, BarChart3 } from "lucide-react";
-import MultiRoleSelect from "@/components/MultiRoleSelect";
 import SkillSuggestions from "@/components/SkillSuggestions";
 import LearningResources from "@/components/LearningResources";
-import { RoleName } from "@/lib/roles-data";
+import { AVAILABLE_ROLES, RoleName } from "@/lib/roles-data";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
@@ -23,7 +23,7 @@ const Resume = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ResumeAnalysisResult | null>(null);
-  const [selectedRoles, setSelectedRoles] = useState<RoleName[]>([]);
+  const [selectedRole, setSelectedRole] = useState<RoleName | "">("");
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -64,8 +64,8 @@ const Resume = () => {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (selectedRoles.length === 0) {
-      toast.error("Please select at least one target role first");
+    if (!selectedRole) {
+      toast.error("Please select a target role first");
       return;
     }
 
@@ -80,12 +80,12 @@ const Resume = () => {
         return;
       }
 
-      const analysis = analyzeResume(text, selectedRoles[0]);
+      const analysis = analyzeResume(text, selectedRole);
       setResult(analysis);
 
       const { error } = await supabase.from("resume_analysis").insert({
         user_id: user.id,
-        job_role: selectedRoles.join(", "),
+        job_role: selectedRole,
         ats_score: analysis.atsScore,
         matched_skills: analysis.matchedSkills,
         missing_skills: analysis.missingSkills,
@@ -115,9 +115,18 @@ const Resume = () => {
           {/* Upload */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-xl p-6 space-y-6">
             <div className="space-y-2">
-              <Label className="text-foreground">Target Roles</Label>
-              <MultiRoleSelect selected={selectedRoles} onChange={setSelectedRoles} placeholder="Select target roles..." />
-              {selectedRoles.length === 0 && <p className="text-xs text-muted-foreground">Select roles to analyze your resume against</p>}
+              <Label className="text-foreground">Select Target Role</Label>
+              <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as RoleName)}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder="Select a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!selectedRole && <p className="text-xs text-muted-foreground">Select one role to analyze your resume against</p>}
             </div>
 
             <div
@@ -212,10 +221,10 @@ const Resume = () => {
           )}
         </div>
 
-        {selectedRoles.length > 0 && (
+        {selectedRole && (
           <div className="space-y-8">
-            <SkillSuggestions roles={selectedRoles} />
-            <LearningResources roles={selectedRoles} />
+            <SkillSuggestions roles={[selectedRole]} />
+            <LearningResources roles={[selectedRole]} />
           </div>
         )}
       </div>
