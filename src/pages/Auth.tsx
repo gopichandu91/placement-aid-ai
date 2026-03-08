@@ -315,6 +315,17 @@ const Auth = () => {
                       </>
                     )}
                   </Button>
+
+                  {mode === "signin" && (
+                    <button
+                      type="button"
+                      onClick={() => setForgotMode(true)}
+                      className="w-full text-sm text-primary hover:underline transition-colors"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
+                  </>)}
                 </form>
               </motion.div>
             </AnimatePresence>
