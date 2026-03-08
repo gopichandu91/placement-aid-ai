@@ -5,14 +5,14 @@ import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { analyzeResume, ResumeAnalysisResult } from "@/lib/prediction";
 import { FileText, Upload, CheckCircle, XCircle, Lightbulb, BarChart3 } from "lucide-react";
-import MultiRoleSelect from "@/components/MultiRoleSelect";
 import SkillSuggestions from "@/components/SkillSuggestions";
 import LearningResources from "@/components/LearningResources";
-import { RoleName } from "@/lib/roles-data";
+import { AVAILABLE_ROLES, RoleName } from "@/lib/roles-data";
 import * as pdfjsLib from "pdfjs-dist";
 import mammoth from "mammoth";
 
