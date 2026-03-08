@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { analyzeResume, ResumeAnalysisResult } from "@/lib/prediction";
-import { FileText, Upload, CheckCircle, XCircle, Lightbulb, BarChart3 } from "lucide-react";
+import { FileText, Upload, CheckCircle, XCircle, Lightbulb, BarChart3, Zap } from "lucide-react";
 import SkillSuggestions from "@/components/SkillSuggestions";
 import LearningResources from "@/components/LearningResources";
 import { AVAILABLE_ROLES, RoleName } from "@/lib/roles-data";
