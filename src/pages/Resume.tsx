@@ -80,12 +80,12 @@ const Resume = () => {
         return;
       }
 
-      const analysis = analyzeResume(text, selectedRoles[0]);
+      const analysis = analyzeResume(text, selectedRole);
       setResult(analysis);
 
       const { error } = await supabase.from("resume_analysis").insert({
         user_id: user.id,
-        job_role: selectedRoles.join(", "),
+        job_role: selectedRole,
         ats_score: analysis.atsScore,
         matched_skills: analysis.matchedSkills,
         missing_skills: analysis.missingSkills,
