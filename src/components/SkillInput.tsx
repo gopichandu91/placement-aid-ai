@@ -14,19 +14,65 @@ export interface UserSkill {
   level: SkillLevel;
 }
 
-const COMMON_SKILLS = [
-  "Python", "Java", "C++", "C", "C#", "SQL", "JavaScript", "TypeScript",
-  "HTML", "CSS", "React", "Node.js", "Django", "Flask", "FastAPI",
-  "Machine Learning", "Deep Learning", "Data Analysis", "Statistics",
-  "TensorFlow", "PyTorch", "Pandas", "NumPy", "Scikit-learn",
-  "Git", "Docker", "Kubernetes", "AWS", "Azure", "GCP",
-  "Power BI", "Tableau", "Excel", "Cloud Computing", "Linux",
-  "MongoDB", "PostgreSQL", "Redis", "REST APIs", "GraphQL",
-  "Spring Boot", "Kotlin", "Swift", "Flutter", "React Native",
-  "Figma", "Selenium", "Cypress", "Unity", "Unreal Engine",
-  "Solidity", "Web3", "Blockchain", "NLP", "Computer Vision",
-  "Agile", "Scrum", "JIRA", "CI/CD", "Terraform",
+export interface SkillCategory {
+  name: string;
+  skills: string[];
+}
+
+const SKILL_CATEGORIES: SkillCategory[] = [
+  {
+    name: "Software Development",
+    skills: ["Python", "Java", "C", "C++", "C#", "JavaScript", "TypeScript", "Go", "Rust", "Kotlin", "Swift", "Ruby", "PHP", "Scala", "Perl"],
+  },
+  {
+    name: "Web Development",
+    skills: ["HTML", "CSS", "React", "Angular", "Vue", "Node.js", "Express.js", "Next.js", "Django", "Flask", "FastAPI", "Svelte", "Tailwind CSS", "Bootstrap", "SASS", "REST APIs", "GraphQL"],
+  },
+  {
+    name: "Data Science & AI",
+    skills: ["Machine Learning", "Deep Learning", "Data Analysis", "Statistics", "TensorFlow", "PyTorch", "Pandas", "NumPy", "Scikit-learn", "NLP", "Computer Vision", "Data Visualization", "R", "Jupyter", "Spark", "Big Data", "Generative AI", "LLMs", "Prompt Engineering"],
+  },
+  {
+    name: "Cloud & DevOps",
+    skills: ["AWS", "Azure", "Google Cloud", "Docker", "Kubernetes", "CI/CD", "Terraform", "Linux", "Ansible", "Jenkins", "GitHub Actions", "Cloud Computing", "Serverless", "Nginx", "Monitoring"],
+  },
+  {
+    name: "Databases",
+    skills: ["SQL", "PostgreSQL", "MongoDB", "Redis", "MySQL", "SQLite", "DynamoDB", "Cassandra", "Neo4j", "Elasticsearch"],
+  },
+  {
+    name: "Cybersecurity",
+    skills: ["Network Security", "Ethical Hacking", "Penetration Testing", "Cryptography", "Malware Analysis", "SIEM Tools", "OWASP", "Kali Linux", "Burp Suite", "Incident Response"],
+  },
+  {
+    name: "Mobile Development",
+    skills: ["Android Development", "iOS Development", "Flutter", "React Native", "Kotlin", "Swift", "Dart", "Jetpack Compose", "SwiftUI"],
+  },
+  {
+    name: "Hardware & Embedded Systems",
+    skills: ["Embedded C", "Microcontrollers", "Arduino", "Raspberry Pi", "VLSI", "Digital Electronics", "Analog Electronics", "FPGA", "Robotics", "IoT Development", "RTOS", "PCB Design", "ARM", "STM32", "Sensor Integration"],
+  },
+  {
+    name: "Game Development",
+    skills: ["Unity", "Unreal Engine", "Game Physics", "3D Modeling", "Godot", "Shader Programming", "C# Game Dev", "Blender"],
+  },
+  {
+    name: "Design & UI",
+    skills: ["UI Design", "UX Research", "Figma", "Adobe XD", "Wireframing", "Prototyping", "Design Systems", "Accessibility"],
+  },
+  {
+    name: "Tools & Practices",
+    skills: ["Git", "Agile", "Scrum", "JIRA", "Selenium", "Cypress", "Playwright", "Postman", "Power BI", "Tableau", "Excel"],
+  },
+  {
+    name: "Blockchain & Web3",
+    skills: ["Solidity", "Web3", "Blockchain", "Smart Contracts", "Ethereum", "Hardhat", "DeFi", "NFT Development"],
+  },
 ];
+
+const COMMON_SKILLS = SKILL_CATEGORIES.flatMap((c) => c.skills).filter(
+  (s, i, arr) => arr.indexOf(s) === i
+);
 
 interface SkillInputProps {
   skills: UserSkill[];
