@@ -221,10 +221,10 @@ const Resume = () => {
           )}
         </div>
 
-        {selectedRoles.length > 0 && (
+        {selectedRole && (
           <div className="space-y-8">
-            <SkillSuggestions roles={selectedRoles} />
-            <LearningResources roles={selectedRoles} />
+            <SkillSuggestions roles={[selectedRole]} />
+            <LearningResources roles={[selectedRole]} />
           </div>
         )}
       </div>
