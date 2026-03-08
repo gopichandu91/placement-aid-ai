@@ -1,12 +1,70 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, ArrowRight, Eye, EyeOff, Mail, Lock, User, Loader2, CheckCircle2 } from "lucide-react";
+import { Brain, ArrowRight, Eye, EyeOff, Mail, Lock, User, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+
+function ForgotPasswordForm({ onBack }: { onBack: () => void }) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) { toast.error("Please enter your email."); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setSent(true);
+      toast.success("Password reset link sent! Check your email.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="text-center space-y-4 py-4">
+        <CheckCircle2 className="w-12 h-12 text-primary mx-auto" />
+        <p className="text-foreground font-semibold">Check your email</p>
+        <p className="text-muted-foreground text-sm">We sent a password reset link to <strong>{email}</strong></p>
+        <button type="button" onClick={onBack} className="text-sm text-primary hover:underline">Back to Sign In</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-4 h-4" /> Back to Sign In
+      </button>
+      <div>
+        <h2 className="text-2xl font-display font-bold text-foreground mb-1">Reset Password</h2>
+        <p className="text-muted-foreground text-sm">Enter your email and we'll send you a reset link.</p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="resetEmail" className="text-foreground text-sm">Email Address</Label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input id="resetEmail" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-11 rounded-xl bg-secondary/50 border-border focus:border-primary focus:ring-primary" required />
+        </div>
+      </div>
+      <Button type="submit" disabled={loading} onClick={handleSubmit} className="w-full h-11 rounded-xl gradient-bg text-primary-foreground font-semibold text-sm">
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send Reset Link"}
+      </Button>
+    </div>
+  );
+}
 
 type AuthMode = "signin" | "signup";
 
