@@ -1,6 +1,6 @@
 // Placement prediction algorithm (client-side scoring)
 
-export type SkillLevel = "Beginner" | "Intermediate" | "Advanced";
+export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert";
 
 export interface UserSkillInput {
   skill: string;
@@ -41,7 +41,8 @@ export interface EnhancedPredictionResult extends PredictionResult {
 const LEVEL_WEIGHT: Record<SkillLevel, number> = {
   Beginner: 0.3,
   Intermediate: 0.65,
-  Advanced: 1.0,
+  Advanced: 0.9,
+  Expert: 1.0,
 };
 
 // Map user skill names to role skill keywords (lowercased fuzzy)
