@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 
-export type SkillLevel = "Beginner" | "Intermediate" | "Advanced";
+export type SkillLevel = "Beginner" | "Intermediate" | "Advanced" | "Expert";
 
 export interface UserSkill {
   skill: string;
