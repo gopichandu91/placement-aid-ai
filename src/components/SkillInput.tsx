@@ -180,19 +180,42 @@ export default function SkillInput({ skills, onChange }: SkillInputProps) {
               {filtered.length === 0 && !search.trim() && (
                 <p className="text-sm text-muted-foreground text-center py-6">All skills selected!</p>
               )}
-              {filtered.map((skill) => (
-                <button
-                  key={skill}
-                  type="button"
-                  onClick={() => addSkill(skill)}
-                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-all duration-150"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                    {skill}
-                  </span>
-                </button>
-              ))}
+              {search.trim() ? (
+                // Flat filtered list when searching
+                filtered.map((skill) => (
+                  <button
+                    key={skill}
+                    type="button"
+                    onClick={() => addSkill(skill)}
+                    className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-all duration-150"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                      {skill}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                // Category-grouped list when not searching
+                filteredCategories.map((cat) => (
+                  <div key={cat.name}>
+                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{cat.name}</div>
+                    {cat.skills.map((skill) => (
+                      <button
+                        key={skill}
+                        type="button"
+                        onClick={() => addSkill(skill)}
+                        className="w-full text-left px-3 py-2 rounded-lg text-sm text-foreground hover:bg-secondary transition-all duration-150"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                          {skill}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              )}
             </div>
           </ScrollArea>
         </PopoverContent>
